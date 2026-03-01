@@ -1,0 +1,50 @@
+name: Release
+
+on:
+  pull_request:
+    branches: [main]
+    types: [closed]
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    name: Publish and Release
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'publish')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js and install deps
+        uses: emilmamedov-inno/cicd-shared-actions/setup-node-deps@main
+        with:
+          node-version: "20"
+
+      - name: Extract version
+        id: pkg
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "📦 Publishing version: ${VERSION}"
+
+      - name: Build
+        run: npm run build
+
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
+          npm publish --access public
+          echo "✅ Published to npm successfully"
+
+      - name: Create Release
+        uses: emilmamedov-inno/cicd-shared-actions/create-release@main
+        with:
+          version: ${{ steps.pkg.outputs.version }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}

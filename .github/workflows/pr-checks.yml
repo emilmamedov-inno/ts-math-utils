@@ -1,0 +1,38 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  pr-checks:
+    name: Verify Pull Request
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js and install deps
+        uses: emilmamedov-inno/cicd-shared-actions/setup-node-deps@main
+        with:
+          node-version: "20"
+
+      - name: Check lockfile exists
+        run: |
+          if [ ! -f package-lock.json ]; then
+            echo "❌ package-lock.json is missing! Dependencies must be locked."
+            exit 1
+          fi
+          echo "✅ package-lock.json exists"
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Unit Tests
+        run: npm test

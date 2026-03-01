@@ -1,0 +1,29 @@
+name: Verify (E2E Tests)
+
+on:
+  pull_request:
+    branches: [main]
+    types: [labeled]
+
+permissions:
+  contents: read
+
+jobs:
+  e2e-tests:
+    name: Integration / E2E Tests
+    if: github.event.label.name == 'verify'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js and install deps
+        uses: emilmamedov-inno/cicd-shared-actions/setup-node-deps@main
+        with:
+          node-version: "20"
+
+      - name: Build package
+        run: npm run build
+
+      - name: Run E2E tests
+        run: npm run test:e2e

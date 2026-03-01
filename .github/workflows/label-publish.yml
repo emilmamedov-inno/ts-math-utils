@@ -1,0 +1,64 @@
+name: Publish (Release Candidate)
+
+on:
+  pull_request:
+    branches: [main]
+    types: [labeled]
+
+permissions:
+  contents: read
+
+jobs:
+  release-candidate:
+    name: Generate Release Candidate
+    if: github.event.label.name == 'publish'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js and install deps
+        uses: emilmamedov-inno/cicd-shared-actions/setup-node-deps@main
+        with:
+          node-version: "20"
+
+      - name: Extract version from package.json
+        id: pkg
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          NAME=$(node -p "require('./package.json').name")
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "name=${NAME}" >> $GITHUB_OUTPUT
+          echo "📦 Package: ${NAME}@${VERSION}"
+
+      - name: Check if version already exists on npm
+        uses: emilmamedov-inno/cicd-shared-actions/check-version-exists@main
+        id: version-check
+        with:
+          package-name: ${{ steps.pkg.outputs.name }}
+          version: ${{ steps.pkg.outputs.version }}
+
+      - name: Block if version exists
+        if: steps.version-check.outputs.exists == 'true'
+        run: |
+          echo "❌ Version ${{ steps.pkg.outputs.version }} already exists on npm!"
+          echo "Please bump the version in package.json before publishing."
+          exit 1
+
+      - name: Build with dev version suffix
+        run: |
+          SHORT_SHA=$(echo "${{ github.event.pull_request.head.sha }}" | cut -c1-7)
+          DEV_VERSION="${{ steps.pkg.outputs.version }}-dev-${SHORT_SHA}"
+          echo "Building with dev version: ${DEV_VERSION}"
+          npm version "${DEV_VERSION}" --no-git-tag-version
+          npm run build
+
+      - name: Create publishable artifact
+        run: npm pack
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-package
+          path: "*.tgz"
+          retention-days: 7
