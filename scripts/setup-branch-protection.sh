@@ -14,19 +14,29 @@ echo "🏷️  Creating labels..."
 gh label create "verify" --description "Triggers E2E/integration tests" --color "0E8A16" --repo "${REPO}" 2>/dev/null || echo "  Label 'verify' already exists"
 gh label create "publish" --description "Triggers release candidate build and release on merge" --color "D93F0B" --repo "${REPO}" 2>/dev/null || echo "  Label 'publish' already exists"
 
-# Set branch protection using GitHub API
+# Set branch protection using GitHub API with proper JSON body
 echo "🛡️  Configuring branch protection rules..."
 gh api \
   --method PUT \
   -H "Accept: application/vnd.github+json" \
   "/repos/${REPO}/branches/main/protection" \
-  -f required_status_checks='{"strict":true,"contexts":["Verify Pull Request"]}' \
-  -F enforce_admins=false \
-  -f required_pull_request_reviews='{"required_approving_review_count":1,"dismiss_stale_reviews":true}' \
-  -f restrictions=null \
-  -F required_linear_history=true \
-  -F allow_force_pushes=false \
-  -F allow_deletions=false
+  --input - <<'EOF'
+{
+  "required_status_checks": {
+    "strict": true,
+    "contexts": ["Verify Pull Request"]
+  },
+  "enforce_admins": false,
+  "required_pull_request_reviews": {
+    "required_approving_review_count": 1,
+    "dismiss_stale_reviews": true
+  },
+  "restrictions": null,
+  "required_linear_history": true,
+  "allow_force_pushes": false,
+  "allow_deletions": false
+}
+EOF
 
 echo ""
 echo "✅ Branch protection configured successfully!"
