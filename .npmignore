@@ -1,7 +1,6 @@
 src/
 coverage/
 .github/
-scripts/
 *.config.*
 tsconfig.json
 .gitignore
