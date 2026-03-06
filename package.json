@@ -1,6 +1,6 @@
 {
   "name": "@emilmamedov-inno/ts-math-utils",
-  "version": "1.1.1000",
+  "version": "1.1.20",
   "description": "A simple TypeScript math utilities package",
   "type": "module",
   "main": "./dist/index.js",
