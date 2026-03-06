@@ -30,7 +30,7 @@ jobs:
         run: |
           VERSION=$(node -p "require('./package.json').version")
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "📦 Publishing version: ${VERSION}"
+          echo "Publishing version: ${VERSION}"
 
       - name: Build
         run: npm run build
