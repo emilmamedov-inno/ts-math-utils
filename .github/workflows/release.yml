@@ -22,8 +22,6 @@ jobs:
 
       - name: Setup Node.js and install deps
         uses: emilmamedov-inno/cicd-shared-actions/setup-node-deps@main
-        with:
-          node-version: "20"
 
       - name: Extract version
         id: pkg
